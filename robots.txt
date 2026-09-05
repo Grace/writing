@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://gracefulco.de/sitemap.xml
+Sitemap: https://grace.github.io/sitemap.xml

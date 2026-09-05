@@ -7,7 +7,7 @@ description: >-
   Control mappings, disclosure measurement, and evidence tooling for systems
   that call large language models. Primary-source research on SOC 2, the EU AI
   Act, and Regulation B.
-url: https://gracefulco.de
+url: https://grace.github.io
 baseurl: ""
 author:
   name: Grace

@@ -1,13 +1,13 @@
 ---
 title: "AI Controls for SOC 2 Type II"
-description: "Twenty-nine controls for systems that call large language models, mapped to the 2017 Trust Services Criteria, each with a test procedure written for a period rather than a moment."
+description: "Thirty-two controls for systems that call large language models, mapped to the 2017 Trust Services Criteria, each with a test procedure written for a period rather than a moment."
 permalink: /ai-controls-soc2/
 ---
 
 # AI Controls for SOC 2 Type II
 
 **A control mapping for systems that call large language models.**
-Twenty-nine controls against the 2017 Trust Services Criteria, each with a
+Thirty-two controls against the 2017 Trust Services Criteria, each with a
 test procedure written for a period rather than a point in time.
 
 ---
@@ -84,7 +84,10 @@ and the one most teams fail*, because shadow usage accrues through developer
 API keys.
 
 > **Honest limit.** An inventory is a statement about what you know about. It
-> does not detect a team calling a provider on a personal card.
+> does not detect a team calling a provider on a personal card. Note also that
+> the bill names models the way billing names them, not the way your inventory
+> does — see E1 — so this comparison needs that mapping before it produces
+> either a finding or a clean result you can rely on.
 
 ### A2 — AI-specific risks are assessed, and reassessed on change
 **CC3.2, CC3.4** · *Identifies and assesses changes that could significantly impact internal control*
@@ -155,10 +158,17 @@ repoint, a comparison of requested names is blind by construction.
 
 Three mechanisms, in ascending strength:
 
-1. **Record the identifier the provider returns**, not the one you sent. The
-   response body carries a model field, and for an alias it resolves to a dated
-   snapshot. If your log stores only the request, this control cannot be
-   evidenced at all and the honest status is *Unknown*.
+1. **Record the identifier the provider returns**, not the one you sent. On the
+   Anthropic and OpenAI APIs the response carries a model field, and for an
+   alias it resolves to a dated snapshot. **Not every platform offers one:**
+   Amazon Bedrock's inference responses do not report which model served the
+   request, so the strongest record available there is the identifier *you
+   sent* — which evidences your own routing and is not an attestation from the
+   provider. Do not populate the field from your own configuration and present
+   it as the provider's answer; that converts a gap into a false attestation,
+   and a false attestation is worse than a blank because nobody goes looking to
+   disprove good news. If your log stores only the name the caller requested,
+   this control cannot be evidenced at all and the honest status is *Unknown*.
 2. **Record the provider's build fingerprint** where one is offered — some APIs
    expose a field for exactly this purpose — so a backend change under a stable
    snapshot name is still visible.
@@ -297,10 +307,36 @@ counts, latency, outcome, and any tools offered or called.
 
 **Evidence.** Log schema and sampled entries.
 
-**Test over a period.** Reconcile logged request counts against provider
-invoice volumes, month by month. **A discrepancy is either unlogged traffic or
-unbilled usage, and both are findings.** This is the single strongest test in
-this document because it uses a source you do not control.
+**Test over a period.** Reconcile logged **token** counts against provider
+billing records, month by month, at the model grain. **A discrepancy is either
+unlogged traffic or unbilled usage, and both are findings.** This is the single
+strongest test in this document because it uses a source you do not control.
+
+**Tokens, not requests.** Billing records do not carry request counts. AWS
+states it plainly: *"CUR does not contain per-request line items ... neither
+carries a per-`requestId` identifier"* — usage is aggregated by usage type over
+an hour or a day. Any request count derived from a bill is inferred rather than
+observed, so a test written against request counts cannot be run at all.
+
+**Count all four token types.** Providers bill input, output, cache-write and
+cache-read separately, at unit prices differing by close to an order of
+magnitude. AWS names this as the most common source of reconciliation gaps: sum
+only input and output and your totals will not match. The error grows with
+prompt caching, so it is largest in exactly the deployments most likely to have
+a stable system prompt — and it fails in the direction that looks like a pass.
+If your log does not split cached tokens out, this test cannot be run and the
+honest status is *Unknown*.
+
+**Do not reconcile currency.** One model bills at different unit prices by
+service tier and by cross-region routing, so no rate card of yours reproduces
+the invoice. Compare the usage behind it.
+
+> **Honest limit.** The bill names models the way billing names them, not the
+> way your API calls do — AWS bills `Claude4.6Sonnet` for the model invoked as
+> `anthropic.claude-sonnet-4-6-...`. Someone who knows both has to write that
+> mapping down. Do not infer it from resemblance: an unmapped line is a question
+> you can answer, and a wrongly matched one reconciles two different models
+> against each other and reports a clean month that nobody will re-examine.
 
 ### E2 — Records are protected from modification
 **CC7.2, CC7.1** · *CC7.1's points of focus name change-detection mechanisms —
@@ -348,7 +384,7 @@ run far longer:
 
 | Obligation | Floor |
 |---|---|
-| EU AI Act Art. 12 (logging) | 6 months |
+| EU AI Act Art. 19 (log retention) | 6 months |
 | HIPAA §164.316(b)(2) | 6 years |
 | FINRA Rule 4511 | 6 years |
 | SEC Rule 17a-4 | 3–6 years depending on record |
@@ -428,7 +464,19 @@ and reasons.
 so a stopped call cannot be lost along with it.
 
 ### G3 — Per-caller resource limits are enforced
-**A1.1** · *Maintains and monitors capacity*
+**A1.1**, or **CC5.2** where Availability is out of scope · *Maintains and
+monitors capacity; selects and develops general control activities over
+technology*
+
+**A1.1 sits in the Availability category, which is optional, and most SOC 2
+reports are Security-only.** Mapped there alone, this control has no home in the
+majority of engagements — against this document's own rule that every control
+needs *a* home. Where Availability is not in scope, cite **CC5.2**: a per-caller
+limit is a general control activity over technology whether or not availability
+is being reported on. With metered inference it is also a spend control rather
+than only a capacity one, which is the reading that survives a Security-only
+scope — MITRE ATLAS **AML.M0004** treats limiting model queries as the
+denial-of-wallet defence.
 
 **Evidence.** Rate, concurrency and token budget configuration per caller.
 
@@ -583,13 +631,16 @@ systems in production during the period, not only the flagship one.
 | F2 | Effective policy recoverable | CC8.1, CC7.2 | | |
 | G1 | Model actions authorized | CC6.3 | | |
 | G2 | Tool calls recorded | CC7.2 | | |
-| G3 | Resource limits enforced | A1.1 | | |
+| G3 | Resource limits enforced | A1.1, or CC5.2 | | |
 | G4 | Agent identity with named owner | CC6.2, CC1.3 | | |
 | G5 | Delegation chain recorded end to end | CC6.1, CC7.2 | | |
 | G6 | Delegated authority scoped and time-bounded | CC6.3 | | |
 | G7 | Grant exercise evidenced separately | CC6.3, CC7.2 | | |
+| H1 | Anomalous behaviour monitored | CC7.1, CC7.2 | | |
+| H2 | AI incidents in the IR process | CC7.3, CC7.4 | | |
+| H3 | Adversarial testing performed | CC4.1 | | |
 
-Twenty-nine rows; G-section controls are *Not addressed* rather than *Unmet*
+Thirty-two rows; G-section controls are *Not addressed* rather than *Unmet*
 where no model in scope can call tools. Say so explicitly — an auditor reading
 a blank is entitled to assume the worse of the two.
 

@@ -1,13 +1,13 @@
 ---
 title: "AI Controls for SOC 2 Type II"
-description: "Twenty-five controls for systems that call large language models, mapped to the 2017 Trust Services Criteria, each with a test procedure written for a period rather than a moment."
+description: "Twenty-nine controls for systems that call large language models, mapped to the 2017 Trust Services Criteria, each with a test procedure written for a period rather than a moment."
 permalink: /ai-controls-soc2/
 ---
 
 # AI Controls for SOC 2 Type II
 
 **A control mapping for systems that call large language models.**
-Twenty-five controls against the 2017 Trust Services Criteria, each with a
+Twenty-nine controls against the 2017 Trust Services Criteria, each with a
 test procedure written for a period rather than a point in time.
 
 ---
@@ -435,6 +435,85 @@ so a stopped call cannot be lost along with it.
 **Test over a period.** Identify the highest-consuming caller per month.
 Consumption exceeding the stated limit means the limit was not enforced.
 
+### G4 — Each agent is a distinct identity with a named accountable owner
+**CC6.2, CC1.3** · *Registers and authorizes before issuing credentials*
+
+An agent acting for employees is not a service account and should not share
+one. It needs its own principal, and a human who answers for what it does.
+
+**Evidence.** Agent inventory with one identity per agent and a named owner,
+not a team alias.
+
+**Test over a period.** For each agent, pull the thread: who is accountable? If
+nobody can be named, that is the finding, and it is a finding regardless of how
+good the logs are.
+
+### G5 — The delegation chain is recorded end to end
+**CC6.1, CC7.2**
+
+Three separate facts, and a token tied to an automation identity is none of
+them: **which agent** acted, **who initiated** it, and **on whose behalf** it
+held authority. Collapsing them into one service-account name is the
+accountability gap — the employee says the agent acted independently, and the
+log cannot contradict them.
+
+**Evidence.** Log schema carrying agent identity, initiating principal, and
+subject-on-whose-behalf as distinct fields.
+
+**Test over a period.** Take an agent action from mid-period and name all three.
+If the log yields only the automation identity, this is Unmet, and no access
+review built on it means anything.
+
+### G6 — Delegated authority is scoped and time-bounded
+**CC6.3** · *Least privilege*
+
+Duration is a dimension of privilege and is usually the one nobody sets.
+Standing authority granted once and never expiring is the normal state, and it
+is the one that makes "duration of access" unanswerable.
+
+**Evidence.** Grant configuration showing scope *and* expiry per agent.
+
+**Test over a period.** For each agent, state when its authority began and
+ended. Any grant with no expiry is Partial at best.
+
+> **An agent needs tighter least privilege than a person, not looser.** Broad
+> scopes get granted because narrowing them is tedious and slows a rollout —
+> and then the log cannot distinguish *the agent did its job* from *the agent
+> had access to do something strange*. Scope narrowness is an evidentiary
+> property, not only a security one.
+
+### G7 — What a grant was used for is evidenced separately from the grant itself
+**CC6.3, CC7.2**
+
+**This is the control most likely to be assumed rather than held.** Grant-layer
+telemetry is usually fine: an OAuth grant event records client, scopes,
+timestamp and authorizing user, and reconstructs *who authorized what, when*.
+
+It cannot reconstruct what happened next. The same scope granted to a
+fixed-purpose application and to an agent is byte-identical in that log — but
+the application's behaviour was fixed by the vendor's code, and the agent's is
+decided at inference time, turn by turn, from prompts nobody reviewed. **The
+delegated task and the action performed do not live in the grant.** They live
+in activity records, and they have to be captured and reviewed as a separate
+control.
+
+**Evidence.** Activity records tied to the grant that produced them, showing
+each action taken under it.
+
+**Test over a period.** Pick a grant. Enumerate every action taken under it
+during the period. If you can produce the authorization event but not the
+activity, the honest status is Unmet for this control even where G1 and G2 are
+Met — those describe the boundary, and this describes what crossed it.
+
+> **Where practitioners disagree, and both positions are defensible.** One
+> school holds that accountability is assigned by policy: the employee who owns
+> an automation is answerable for everything it does, and reconstruction from
+> logs is a convenience rather than the basis of the claim. The other holds
+> that accountability which cannot be evidenced will not survive a disputed
+> incident. The first is cheaper and is what most policies actually say. The
+> second is what an auditor tests. Adopting the first does not relieve you of
+> G5 — it changes who the record has to convince.
+
 ---
 
 ## H. Monitoring and response
@@ -505,8 +584,12 @@ systems in production during the period, not only the flagship one.
 | G1 | Model actions authorized | CC6.3 | | |
 | G2 | Tool calls recorded | CC7.2 | | |
 | G3 | Resource limits enforced | A1.1 | | |
+| G4 | Agent identity with named owner | CC6.2, CC1.3 | | |
+| G5 | Delegation chain recorded end to end | CC6.1, CC7.2 | | |
+| G6 | Delegated authority scoped and time-bounded | CC6.3 | | |
+| G7 | Grant exercise evidenced separately | CC6.3, CC7.2 | | |
 
-Twenty-five rows; G-section controls are *Not addressed* rather than *Unmet*
+Twenty-nine rows; G-section controls are *Not addressed* rather than *Unmet*
 where no model in scope can call tools. Say so explicitly — an auditor reading
 a blank is entitled to assume the worse of the two.
 

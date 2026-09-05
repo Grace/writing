@@ -8,7 +8,7 @@ description: >-
   that call large language models. Primary-source research on SOC 2, the EU AI
   Act, and Regulation B.
 url: https://grace.github.io
-baseurl: ""
+baseurl: "/writing"
 author:
   name: Grace
   email: grace@gracefulco.de

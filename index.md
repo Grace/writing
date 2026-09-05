@@ -13,7 +13,7 @@ document, and code you can run.
 ## Compliance and evidence
 
 **[AI Controls for SOC 2 Type II]({{ '/ai-controls-soc2/' | relative_url }})**  
-Twenty-five controls mapped to the 2017 Trust Services Criteria, each with a
+Thirty-two controls mapped to the 2017 Trust Services Criteria, each with a
 test procedure written for a period rather than a moment. There is no AI
 criterion in the TSC, so somebody has to write the mapping, and your auditor
 expects it to be you.

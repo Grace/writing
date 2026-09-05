@@ -1,0 +1,42 @@
+# Change `url` to whatever this actually serves from before publishing —
+# jekyll-seo-tag builds every canonical tag from it, and a wrong value points
+# search engines at a page that does not exist.
+title: Grace
+tagline: AI governance and compliance engineering
+description: >-
+  Control mappings, disclosure measurement, and evidence tooling for systems
+  that call large language models. Primary-source research on SOC 2, the EU AI
+  Act, and Regulation B.
+url: https://gracefulco.de
+baseurl: ""
+author:
+  name: Grace
+  email: grace@gracefulco.de
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+permalink: /:slug/
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Working documents. These are notes to self, not publications: a business plan
+# with revenue expectations, and a peer-review response listing every defect in
+# a paper. Excluding them is deliberate.
+exclude:
+  - product-soc2-ai-pack.md
+  - paper-revision-plan.md
+  - backups/
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - README.md
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: page

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{%- seo -%}
+<link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ '/feed.xml' | relative_url }}">
+<style>
+:root{
+  --paper:#fbfbfa; --ink:#16191c; --mid:#4e5860; --faint:#7c858c;
+  --rule:#e0e3e6; --accent:#1c4e5c; --accent-soft:#e6eff2;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#12161a; --ink:#e5eaee; --mid:#a2adb6; --faint:#7c868f;
+        --rule:#262e36; --accent:#7fc3d6; --accent-soft:#16303a;}
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:400 17px/1.65 ui-serif, Georgia, "Iowan Old Style", serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:720px; margin:0 auto; padding:0 22px 88px}
+nav{
+  display:flex; gap:20px; align-items:baseline; padding:26px 0 22px;
+  border-bottom:1px solid var(--rule); margin-bottom:44px;
+  font:600 14px/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.01em;
+}
+nav a{color:var(--ink); text-decoration:none}
+nav a:hover{color:var(--accent)}
+nav .sp{flex:1}
+nav .tag{font-weight:400; color:var(--faint); font-size:13px}
+h1,h2,h3{font-family:ui-sans-serif,system-ui,sans-serif; line-height:1.2; text-wrap:balance}
+h1{font-size:clamp(30px,4.6vw,42px); font-weight:700; letter-spacing:-.021em; margin:0 0 20px}
+h2{font-size:23px; font-weight:600; letter-spacing:-.012em; margin:44px 0 14px}
+h3{font-size:19px; font-weight:600; margin:32px 0 10px}
+p{margin:0 0 19px}
+a{color:var(--accent)}
+em{color:var(--mid)}
+hr{border:0; border-top:1px solid var(--rule); margin:38px 0}
+blockquote{
+  margin:22px 0; padding:2px 0 2px 20px; border-left:3px solid var(--accent);
+  color:var(--mid); font-style:italic;
+}
+blockquote p:last-child{margin-bottom:0}
+code{
+  font:400 .87em ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:var(--accent-soft); padding:.12em .34em; border-radius:3px;
+}
+pre{background:var(--accent-soft); padding:15px 17px; border-radius:4px; overflow-x:auto}
+pre code{background:none; padding:0}
+.tw{overflow-x:auto; margin:24px 0}
+table{border-collapse:collapse; width:100%; font:400 15px/1.5 ui-sans-serif,system-ui,sans-serif}
+th{
+  text-align:left; font-size:11.5px; font-weight:600; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--faint); padding:0 13px 8px 0;
+  border-bottom:1px solid var(--rule); white-space:nowrap;
+}
+td{padding:9px 13px 9px 0; border-bottom:1px solid var(--rule); vertical-align:top;
+   font-variant-numeric:tabular-nums}
+ul,ol{padding-left:23px} li{margin-bottom:7px}
+footer{
+  margin-top:64px; padding-top:20px; border-top:1px solid var(--rule);
+  font:400 14px/1.6 ui-sans-serif,system-ui,sans-serif; color:var(--faint);
+}
+footer a{color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <a href="{{ '/' | relative_url }}">{{ site.title }}</a>
+  <span class="tag">{{ site.tagline }}</span>
+  <span class="sp"></span>
+  <a href="https://github.com/Grace">GitHub</a>
+</nav>
+<main>
+{{ content }}
+</main>
+<footer>
+  <p>{{ site.author.name }} · <a href="mailto:{{ site.author.email }}">{{ site.author.email }}</a>{% if page.updated %} · Updated {{ page.updated }}{% endif %}</p>
+</footer>
+</div>
+<script>
+// Tables need their own scroll container or the page scrolls sideways on a phone.
+document.querySelectorAll("main table").forEach(function(t){
+  if(t.parentElement.classList.contains("tw"))return;
+  var d=document.createElement("div"); d.className="tw";
+  t.parentNode.insertBefore(d,t); d.appendChild(t);
+});
+</script>
+</body>
+</html>

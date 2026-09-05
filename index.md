@@ -22,6 +22,11 @@ expects it to be you.
 What the EU AI Act actually asks of an LLM deployment, and why the control most
 vendors sell you is the one least able to deliver it.
 
+**[The strongest test in your AI controls checklist doesn't run]({{ '/invoice-reconciliation/' | relative_url }})**  
+Reconcile logged request counts against provider invoices, month by month. It is
+the best test in every AI control mapping, including mine. AWS billing data
+contains no request counts — here is what to reconcile instead.
+
 **[Your gateway is why the Bedrock bill has one line]({{ '/bedrock-attribution/' | relative_url }})**  
 Amazon solved per-team attribution for callers that reach Bedrock directly. A
 gateway is how you give that up — and the only thing that can give it back.

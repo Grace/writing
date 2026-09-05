@@ -426,12 +426,22 @@ When a decision is questioned six months later, you need to show what rules,
 prompt, and model produced it — not what is deployed now.
 
 **Evidence.** A version identifier or content hash of the effective
-configuration, recorded on each interaction, resolvable to the configuration
-itself.
+configuration, recorded on each interaction and **resolvable to the
+configuration itself** — the digest alone is not the control. A hash says
+*that* the rules changed; it cannot say what they were, and an interaction
+citing a document nobody kept is a citation to a missing source.
+
+**The prompt has to be inside what the identifier covers.** This is where the
+control usually breaks: the hash covers deployment configuration, the prompt
+template lives in application code or a console field outside it, and the
+reconstruction the test asks for stops one step short of the thing actually in
+dispute. Confirm the versioned artefact includes the prompt, or record a second
+identifier that does, and say which in your description of the system.
 
 **Test over a period.** Take a logged interaction from early in the period and
-reconstruct the exact prompt and model settings that produced it. *Most
-organisations cannot do this and do not discover it until a dispute.*
+reconstruct the exact prompt and model settings that produced it — retrieving
+the artefacts, not just the identifiers naming them. *Most organisations cannot
+do this and do not discover it until a dispute.*
 
 ---
 

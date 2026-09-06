@@ -22,6 +22,12 @@ expects it to be you.
 What the EU AI Act actually asks of an LLM deployment, and why the control most
 vendors sell you is the one least able to deliver it.
 
+**[Your observability tool cannot be your evidence]({{ '/observability-is-not-evidence/' | relative_url }})**  
+Honeycomb said it themselves in 2023: observability and compliance workloads are
+orthogonal. Sampling is the product and retention is 60 days. What actually
+finishing the other tier takes, and the sampler-ordering trap that quietly makes
+an archive worthless.
+
 **[The strongest test in your AI controls checklist doesn't run]({{ '/invoice-reconciliation/' | relative_url }})**  
 Reconcile logged request counts against provider invoices, month by month. It is
 the best test in every AI control mapping, including mine. AWS billing data

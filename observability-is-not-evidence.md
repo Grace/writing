@@ -332,6 +332,42 @@ None of those six is difficult on its own. What makes the project stall is that
 they are six different pieces of work that only pay off together, and five of
 them are invisible until the audit.
 
+## "So now I run two systems"
+
+This is the objection, and it is fair. Everything above adds a thing.
+
+Except that in a regulated environment the arrow points the other way, and it is
+worth being precise about how the conversation actually goes. A team wants to
+run agents in production. They want real observability for it, because
+non-deterministic multi-hop workflows are miserable to debug without it.
+Somebody in risk or audit asks whether that platform is the system of record for
+what the models did. The honest answer is no — it samples, and it keeps sixty
+days.
+
+And then one of three things happens. The project stalls while somebody works
+out what to do about it. Or the team is told to build the archive first, and the
+observability purchase waits behind a data-lake project that is nobody's
+priority. Or somebody buys a heavyweight AI-governance suite that answers the
+compliance question and does mediocre observability as a side effect, and now
+the engineers have a tool they do not want to use.
+
+All three come from asking one system two questions it was never designed to
+answer together. **The unresolved compliance question is not a reason to add a
+second tier. It is what is currently stopping you from adopting the first one.**
+
+Separate them and the objection dissolves. The observability platform gets to be
+excellent at observability without pretending to be a system of record — no
+seven-year retention, no fighting its own sampler, no compliance features
+bolted onto a query engine. The evidence question is answered by something
+built for it, in the request path, fail-closed. And because a gateway already
+sits where every call passes, the marginal cost of the second tier is a config
+block rather than a project.
+
+Nobody should want this the other way round. An observability platform that kept
+100% of everything for seven years to satisfy an auditor would be slower, more
+expensive, and worse at the job it exists for. The split is not a compromise
+between two vendors; it is what lets each one be good.
+
 ## Go and check the sampler
 
 If you take one thing from this: find out whether your long-retention export

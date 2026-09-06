@@ -98,6 +98,121 @@ None of these are hard to fix individually. Together they are the difference
 between a pile of retained telemetry and something an auditor will accept, and
 the gap between the two is where every one of these projects stalls.
 
+## Being before the sampler
+
+The mechanical part first, because it is genuinely just pipeline topology.
+
+A Collector pipeline is `receivers → processors → exporters`, and **a sampler is
+a processor**, so it belongs to one pipeline rather than to the Collector. Point
+two pipelines at the same receiver and put the sampler in only one of them.
+[The Collector creates a single receiver
+instance](https://opentelemetry.io/docs/collector/architecture/) that fans out
+to both, so this costs you one receiver, not two.
+
+```yaml
+# otelcol-contrib: tail_sampling, awss3 and file_storage are all contrib
+# components, not core.
+receivers:
+  otlp:
+    protocols: { grpc: {}, http: {} }
+
+extensions:
+  file_storage/queue:
+    directory: /var/lib/otelcol/queue
+
+processors:
+  batch: {}
+  tail_sampling:
+    decision_wait: 10s
+    policies:
+      - name: errors
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      - name: baseline
+        type: probabilistic
+        probabilistic: { sampling_percentage: 10 }
+
+exporters:
+  awss3:
+    s3uploader: { region: us-east-1, s3_bucket: evidence-archive, s3_prefix: traces }
+  otlphttp/honeycomb:
+    endpoint: https://api.honeycomb.io
+    headers: { x-honeycomb-team: ${env:HONEYCOMB_API_KEY} }
+    sending_queue:
+      storage: file_storage/queue
+
+service:
+  extensions: [file_storage/queue]
+  pipelines:
+    traces/archive:            # everything. no sampler in this list.
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [awss3]
+    traces/honeycomb:          # the sampler lives here and only here
+      receivers: [otlp]
+      processors: [tail_sampling, batch]
+      exporters: [otlphttp/honeycomb]
+```
+
+Three things will defeat that config, and all three are common.
+
+**Head sampling in the SDK.** If your application samples — `traceidratio` at
+0.1, say — the Collector never receives what was dropped and no downstream
+topology recovers it. Set `OTEL_TRACES_SAMPLER=always_on`, or
+`parentbased_always_on` where you honour an upstream decision. This is the usual
+way people get it wrong: they configure tail sampling carefully in the Collector
+and leave a ratio sampler in the app.
+
+**Refinery is upstream by default.** The standard deployment is apps → Refinery
+→ Honeycomb, which puts the sampler in front of everything. To archive
+unsampled you have to invert it: apps → Collector, and the Collector fans out to
+the archive at full volume and to Refinery for the sampled path.
+
+**The Collector layer drops things too.** A memory limiter, a full queue, a
+restart with an in-memory queue. The `file_storage` extension backs the sending
+queue with a write-ahead log so a crash does not lose what was buffered — and
+[it will still lose data](https://opentelemetry.io/docs/collector/resiliency/)
+if the disk fills or retries are exhausted.
+
+Also note the tail-sampling constraint: every span of a trace must reach the
+same Collector instance for the decision to be correct, which shapes how you
+load-balance in front of it.
+
+## Why that is still not evidence
+
+Get all of the above right and you have an unsampled archive. You do not yet
+have evidence, and the reason is structural rather than a configuration you
+missed.
+
+**OTLP is fire-and-forget, on purpose.** A collector that is briefly down must
+not take your application down with it, so the application does not learn
+whether its export succeeded. That is correct engineering and it is exactly the
+property that disqualifies the pipeline: if nothing knows the write failed,
+nothing can refuse the request whose record was lost. Completeness becomes
+something you hope for and monitor, rather than something you enforce — and
+*"we believe we captured everything"* is not a sentence that survives contact
+with an auditor.
+
+So the evidence write cannot be a branch of the telemetry pipeline. It has to be
+a different write, with four properties the pipeline deliberately does not have:
+
+- **Synchronous** — in the request path, before the response is returned.
+- **Fail-closed** — a completion whose record cannot be written is refused. This
+  inverts the usual availability trade, and it is the only version of
+  completeness you can put in front of somebody.
+- **Local before remote** — durable on disk without a network hop, so shipping
+  it elsewhere is a copy rather than the durability decision.
+- **Verifiable by the recipient** — chained, so they check it rather than trust
+  you.
+
+Ship the segments off-box afterwards by all means. Prune only after the shipper
+has confirmed. But the moment that decides whether you have a record has already
+passed by then, and it passed in the request path.
+
+**The telemetry pipeline is a copy. The log is the record.** Being before the
+sampler is necessary and it is not sufficient, and the distinction is the whole
+reason there are two tiers rather than one with a longer retention setting.
+
 ## What the second tier actually needs
 
 Five properties, and each of them is a design decision rather than a storage
@@ -199,6 +314,23 @@ step of its own. A span carrying an argument to `transfer_funds` routes around
 the one control the whole design depends on. Tool *names* export, because a name
 is metadata and is the finding. Arguments are content, and there should be
 nowhere to put them.
+
+## The assignment, finished
+
+Setting the six gaps against what closes each one:
+
+| What the data lake leaves open | What closes it |
+|---|---|
+| Archive is the sampled stream | Sampler in one pipeline only, `always_on` in the SDK, Refinery downstream of the fan-out |
+| Anyone could have edited it | Hash-chained entries, verified by the recipient; state the tail-truncation limit rather than hiding it |
+| Completeness is hoped for | Synchronous fail-closed write in the request path |
+| No record of the rules in force | Fingerprint the decision-affecting config, stamp every entry, archive the document under its own digest |
+| Nobody knows who authorised those rules | Signed approval of the fingerprint; the gateway holds public keys only, so it cannot sign for itself |
+| Refusals never emitted | Record the refused call *before* failing the request, so a stopped call is not lost with it |
+
+None of those six is difficult on its own. What makes the project stall is that
+they are six different pieces of work that only pay off together, and five of
+them are invisible until the audit.
 
 ## Go and check the sampler
 
